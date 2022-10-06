@@ -10,10 +10,12 @@ class LowVision(object):
         self.offset = 40
         self.image = None
         self.proc_image = None
-        self.mode = ["normal", "high_contrast","show_black","change_to_green"]
-        self.mode_index = 3
+        self.mode = ["normal", "high_contrast","show_black","change_to_yellow"]
+        self.mode_index = 2
     def load_image(self):
-        _, self.image = self.cap.read()
+        ret = False
+        while not ret:
+            ret, self.image = self.cap.read()
         self.image = cv2.resize(self.image, None, fx=self.zoom_factor, fy=self.zoom_factor)  # type: ignore
     def process_image(self):
         if self.image is None:
@@ -50,21 +52,23 @@ class LowVision(object):
             lower_black = np.array([0, 0, 0], dtype = "uint16")
             upper_black = np.array([80, 80, 80], dtype = "uint16")
             black_mask = cv2.inRange(tmp, lower_black, upper_black)
-            self.proc_image = black_mask
-
-        elif self.mode[self.mode_index] == "change_to_yello":
-            contrast = 65
-            shadow = 20
-            highlight = 255
-            alpha_b = (highlight - shadow)/255
-            gamma_b = shadow
-            buf = cv2.addWeighted(self.image, alpha_b, self.image, 0, gamma_b)
-            f = 131*(contrast + 127)/(127*(131-contrast))
-            alpha_c = f
-            gamma_c = 127*(1-f)
-            tmp = cv2.addWeighted(buf, alpha_c, buf, 0, gamma_c)
-            tmp[np.where((tmp != [0, 0, 0]).all(axis = 2))] = [0, 255, 255]
+            tmp = cv2.cvtColor(black_mask, cv2.COLOR_GRAY2RGB)
+            tmp[np.all(tmp == (255,255,255), axis=-1)] = (0,255,255)
             self.proc_image = tmp
+
+        elif self.mode[self.mode_index] == "change_to_yellow":
+            tmp = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
+            invert = cv2.bitwise_not(tmp)
+            image = np.zeros_like(self.image)
+            image[:,:,0] = invert
+            image[:,:,1] = invert
+            image[:,:,2] = invert
+            alpha = 0.4
+            beta = 1.0 - alpha
+            yellow = np.zeros((tmp.shape[0], tmp.shape[1],3), dtype=np.uint8)
+            yellow[:] = (0,255,255)
+            final = cv2.addWeighted(image, alpha, yellow, beta, 0.0)
+            self.proc_image = final
 
     def render_image(self):
         
