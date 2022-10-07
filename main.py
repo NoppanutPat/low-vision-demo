@@ -5,18 +5,29 @@ import numpy as np
 
 class LowVision(object):
     def __init__(self) -> None:
-        self.cap = cv2.VideoCapture(0)
-        self.zoom_factor = 1.5 
+        self.cap = cv2.VideoCapture(1)
+        self.zoom_factor = 1.0
         self.offset = 40
         self.image = None
         self.proc_image = None
         self.mode = ["normal", "high_contrast","show_black","change_to_yellow"]
-        self.mode_index = 2
+        self.mode_index = 0
     def load_image(self):
         ret = False
         while not ret:
             ret, self.image = self.cap.read()
-        self.image = cv2.resize(self.image, None, fx=self.zoom_factor, fy=self.zoom_factor)  # type: ignore
+        if self.zoom_factor < 1.0:
+            self.image = cv2.resize(self.image, None, fx=self.zoom_factor, fy=self.zoom_factor)  # type: ignore
+        else:
+            width = int(self.image.shape[1] * self.zoom_factor)
+            height = int(self.image.shape[0] * self.zoom_factor)
+            dim = (width, height)
+            print(dim)
+        
+            # resize image
+            resized = cv2.resize(self.image, dim, interpolation = cv2.INTER_AREA)
+            self.image = resized[(resized.shape[0]-1080)//2:(resized.shape[0]+1080)//2, (resized.shape[1]-1920)//2:(resized.shape[1]+1920)//2]
+
     def process_image(self):
         if self.image is None:
             return None
@@ -79,6 +90,14 @@ class LowVision(object):
         img_size_x = 1000
         ori_x = 960
         ori_y = 540
+
+        if self.zoom_factor < 1.0:
+            top = (1080 - self.proc_image.shape[0])//2
+            bottom = top
+            left = (1920 - self.proc_image.shape[1])//2
+            right = left
+            self.proc_image = cv2.copyMakeBorder(self.proc_image, top, bottom, left, right, cv2.BORDER_CONSTANT, None, [0, 0, 0])
+
         image1 = self.proc_image[ori_y - (img_size_y//2):ori_y + (img_size_y//2),ori_x - (img_size_x//2):ori_x + (img_size_x//2)]
         image2 = self.proc_image[ori_y - (img_size_y//2):ori_y + (img_size_y//2), ori_x - (img_size_x//2) + self.offset:ori_x + (img_size_x//2) + self.offset]
         
@@ -110,12 +129,13 @@ class LowVision(object):
         
         ## Key check
         key = cv2.waitKey(1)
+        zoom_scale = 0.05
         if key == 119:
-            self.zoom_factor += 0.1
+            self.zoom_factor += zoom_scale
         elif key == 115:
-            self.zoom_factor -= 0.1
-            if self.zoom_factor < 1.0:
-                self.zoom_factor = 1.0
+            self.zoom_factor -= zoom_scale
+            if self.zoom_factor <= zoom_scale:
+                self.zoom_factor = zoom_scale
         elif key == 114:
             self.zoom_factor = 1.0
         elif key == 97:
