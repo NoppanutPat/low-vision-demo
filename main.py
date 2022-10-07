@@ -10,7 +10,7 @@ class LowVision(object):
         self.offset = 40
         self.image = None
         self.proc_image = None
-        self.mode = ["normal", "high_contrast","show_black","change_to_yellow"]
+        self.mode = ["normal", "high_contrast","text","yellow"]
         self.mode_index = 0
     def load_image(self):
         ret = False
@@ -48,7 +48,7 @@ class LowVision(object):
             # # tmp[0] = tmp[0] * 2.55
             # tmp[1] = tmp[1] * 2.55
             # self.proc_image = tmp
-        elif self.mode[self.mode_index] == "show_black":
+        elif self.mode[self.mode_index] == "text":
             # self.proc_image = cv2.Canny(self.image,100,200)
             contrast = 65
             shadow = 20
@@ -67,7 +67,7 @@ class LowVision(object):
             tmp[np.all(tmp == (255,255,255), axis=-1)] = (0,255,255)
             self.proc_image = tmp
 
-        elif self.mode[self.mode_index] == "change_to_yellow":
+        elif self.mode[self.mode_index] == "yellow":
             tmp = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
             invert = cv2.bitwise_not(tmp)
             image = np.zeros_like(self.image)
