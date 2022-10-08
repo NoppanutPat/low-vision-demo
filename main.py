@@ -5,7 +5,7 @@ import numpy as np
 
 class LowVision(object):
     def __init__(self) -> None:
-        self.cap = cv2.VideoCapture(1)
+        self.cap = cv2.VideoCapture(0)
         self.zoom_factor = 1.0
         self.offset = 40
         self.image = None
@@ -22,7 +22,7 @@ class LowVision(object):
             width = int(self.image.shape[1] * self.zoom_factor)
             height = int(self.image.shape[0] * self.zoom_factor)
             dim = (width, height)
-            print(dim)
+            # print(dim)
         
             # resize image
             resized = cv2.resize(self.image, dim, interpolation = cv2.INTER_AREA)
@@ -61,7 +61,7 @@ class LowVision(object):
             gamma_c = 127*(1-f)
             tmp = cv2.addWeighted(buf, alpha_c, buf, 0, gamma_c)   
             lower_black = np.array([0, 0, 0], dtype = "uint16")
-            upper_black = np.array([80, 80, 80], dtype = "uint16")
+            upper_black = np.array([150, 150, 150], dtype = "uint16")
             black_mask = cv2.inRange(tmp, lower_black, upper_black)
             tmp = cv2.cvtColor(black_mask, cv2.COLOR_GRAY2RGB)
             tmp[np.all(tmp == (255,255,255), axis=-1)] = (0,255,255)
